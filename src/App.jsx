@@ -5,19 +5,17 @@ import Navbar from "./components/Navbar";
 export default function App() {
   return (
     <Grid
-      m="5px"
-      p="5px"
+      p="10px"
       gap="4px"
-      bg="gray.200"
       templateRows="repeat(7, 1fr)"
       minHeight="100vh"
     >
-      <GridItem bg="green.400" rowSpan={1}>
+      <GridItem rowSpan={1}>
         <Navbar />
       </GridItem>
 
-      <GridItem bg="blue.400" rowSpan={6}>
-        <Button colorPalette="teal">theme</Button>
+      <GridItem rowSpan={6}>
+        <Button colorPalette="teal">Main content</Button>
       </GridItem>
     </Grid>
   );
