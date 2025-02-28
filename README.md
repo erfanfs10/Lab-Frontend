@@ -1,4 +1,4 @@
-# Video Convertor Frontend
+# Image Converter Frontend
 
 ---
 
