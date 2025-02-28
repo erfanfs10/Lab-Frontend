@@ -1,15 +1,28 @@
-import React from "react";
-import { Flex, HStack, Button, Heading, Spacer } from "@chakra-ui/react";
+import { useState } from "react";
+import {
+  Flex,
+  HStack,
+  Button,
+  Heading,
+  Spacer,
+  LocaleProvider,
+} from "@chakra-ui/react";
+import ColorModeButton from "./ColorMode";
+import SelectLanguage from "./SelectLanguage";
 
 export default function Navbar() {
+  const [lang, setLang] = useState("eng");
+
   return (
-    <Flex as="nav" m="5px">
-      <Heading>The Image Converter App</Heading>
-      <Spacer />
-      <HStack spaceX="20px">
-        <Button colorPalette="teal">pink colspan 2</Button>
-        <Button colorPalette="purple">yellow colspan 2</Button>
-      </HStack>
-    </Flex>
+    <LocaleProvider locale="ar-Ar">
+      <Flex as="nav" m="20px" dir={lang==="fa"?"rtl":""} >
+        <Heading>The Image Converter App</Heading>
+        <Spacer />
+        <HStack spaceX="20px">
+          <SelectLanguage onSetLang={(val)=>setLang(val)} />
+          <ColorModeButton />
+        </HStack>
+      </Flex>
+    </LocaleProvider>
   );
 }
