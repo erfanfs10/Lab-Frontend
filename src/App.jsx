@@ -1,6 +1,7 @@
 import React from "react";
-import { Grid, GridItem, Button } from "@chakra-ui/react";
+import { Grid, GridItem } from "@chakra-ui/react";
 import Navbar from "./components/Navbar";
+import Convert from "./components/Convert";
 
 export default function App() {
   return (
@@ -15,7 +16,7 @@ export default function App() {
       </GridItem>
 
       <GridItem rowSpan={6}>
-        <Button colorPalette="teal">Main content</Button>
+        <Convert/>
       </GridItem>
     </Grid>
   );
