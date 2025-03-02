@@ -1,20 +1,35 @@
 import { useState, useRef, useEffect } from "react";
-import { VStack, Text, Button, NativeSelect, Box } from "@chakra-ui/react";
+import {
+  VStack,
+  Text,
+  Button,
+  Box,
+  HStack,
+} from "@chakra-ui/react";
 import {
   FileUploadDropzone,
   FileUploadList,
   FileUploadRoot,
+  FileUploadClearTrigger,
 } from "./ui/file-upload";
 import { toaster } from "./ui/toaster";
+import { CloseButton } from "./ui/close-button";
+import { InputGroup } from "./ui/input-group";
+import { StepsItem, StepsList, StepsRoot } from "./ui/steps";
+import {
+  ClipboardIconButton,
+  ClipboardInput,
+  ClipboardLabel,
+  ClipboardRoot,
+} from "./ui/clipboard";
+import { Radio, RadioGroup } from "./ui/radio";
 import axios from "axios";
 
-export default function Convert() {
+export default function Convert({ setWsStatus, wsStatus }) {
   const selectedFile = useRef(null);
-  const outPutFormat = useRef(null);
-  const [wsStatus, setWsStatus] = useState(false);
-  const [err, setErr] = useState(null);
+  const [outPutFormat, setOutPutFormat] = useState(".png");
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("");
+  const [step, setStep] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState("");
 
   const showToast = (errorText, toastType) => {
@@ -24,7 +39,7 @@ export default function Convert() {
     });
   };
 
-  useEffect(() => {
+  const connectToWS = () => {
     // Open WebSocket connection
     const ws = new WebSocket("ws://127.0.0.1:8000/ws/");
 
@@ -37,7 +52,8 @@ export default function Convert() {
     // runs when receive a message
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      setStatus(data.status);
+      setStep(data.step);
+      console.log(data.step);
       if (data.status === "Done" && data.url) {
         setDownloadUrl(data.url);
       }
@@ -45,7 +61,7 @@ export default function Convert() {
 
     // runs when there is an error
     ws.onerror = (error) => {
-      showToast("Can Not Connect To Server Please Reload The Page", "error");
+      showToast("Can Not Connect To Server", "error");
       console.log("Can not connect to Websocket:", error);
       setWsStatus(false);
     };
@@ -55,6 +71,18 @@ export default function Convert() {
       console.log("WebSocket closed");
       setWsStatus(false);
     };
+  };
+
+  useEffect(() => {
+    if (!wsStatus) {
+      connectToWS();
+    }
+    let interval = setInterval(() => {
+      if (!wsStatus) {
+        connectToWS();
+      }
+    }, 3000); // each 3 second
+    return () => clearInterval(interval);
   }, [wsStatus]);
 
   const uploadFile = (e) => {
@@ -72,7 +100,7 @@ export default function Convert() {
       showToast("The File Is Too Large", "error");
       return;
     }
-    if (outPutFormat.current.value == "") {
+    if (outPutFormat == "") {
       showToast("Please Select Your Output Format", "error");
       return;
     }
@@ -80,7 +108,7 @@ export default function Convert() {
     formData.append("image", f);
     axios
       .post(
-        `http://127.0.0.1:8000/convert/?format=${outPutFormat.current.value}`,
+        `http://127.0.0.1:8000/convert/?format=${outPutFormat}`,
         formData,
         {
           headers: {
@@ -93,17 +121,17 @@ export default function Convert() {
         }
       )
       .then((res) => {
-        setErr(null);
+        console.log("success")
       })
       .catch((err) => {
-        setErr(err.response.data.message);
+        showToast(err.response.data.message, "error")
       });
   };
 
   return (
     <>
-      <VStack justifyContent="center">
-        {err && showToast(err, "error")}
+      <VStack justifyContent="center" alignItems="center">
+
         <Text textStyle="xl" fontWeight="semibold">
           Fast Image Converter Tool
         </Text>
@@ -118,32 +146,73 @@ export default function Convert() {
             label="Drag and drop here to upload"
             description="png, jpeg, webp up to 5MB"
           />
-          <FileUploadList required />
+          <InputGroup
+            endElement={
+              <FileUploadClearTrigger asChild>
+                <CloseButton
+                  me="-1"
+                  size="xs"
+                  variant="plain"
+                  focusVisibleRing="inside"
+                  focusRingWidth="2px"
+                  pointerEvents="auto"
+                  color="fg.subtle"
+                />
+              </FileUploadClearTrigger>
+            }
+          >
+            <FileUploadList required />
+          </InputGroup>
         </FileUploadRoot>
-        <Button onClick={uploadFile}>Upload & Convert</Button>
 
-        <Text>Select your output format</Text>
+        <Text mb="5px" textStyle="lg">
+          Select your output format
+        </Text>
 
-        <NativeSelect.Root size="sm" width="240px">
-          <NativeSelect.Field ref={outPutFormat} placeholder="Select option">
-            <option value=".webp">.webp</option>
-            <option value=".png">.png</option>
-            <option value=".jpeg">.jpeg</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
+        <RadioGroup mt="5px" size="lg" value={outPutFormat} onValueChange={(e) => setOutPutFormat(e.value)}>
+          <HStack gap="6">
+            <Radio value=".png">.png</Radio>
+            <Radio value=".jpeg">.jpeg</Radio>
+            <Radio value=".webp">.webp</Radio>
+          </HStack>
+        </RadioGroup>
 
-        {status && (
-          <Box className="mt-4 p-4 bg-white shadow rounded">
-            <Text>Status: {status}</Text>
-            {progress > 0 && <Text>Upload Progress: {progress}%</Text>}
-            {downloadUrl && (
-              <a href={downloadUrl} download className="text-green-500">
-                Download Converted File: {downloadUrl}
-              </a>
-            )}
-          </Box>
-        )}
+        <Button mt="10px" onClick={uploadFile}>
+          Upload & Convert
+        </Button>
+
+        <Box mt="10px" width="700px">
+          <StepsRoot defaultStep={0} step={step} count={3}>
+            <StepsList>
+              <StepsItem
+                index={0}
+                title="Uploading"
+                description={progress === 0 ? "" : progress + "%"}
+              />
+              <StepsItem index={1} title="Converting" />
+              <StepsItem index={2} title="Ready" />
+            </StepsList>
+          </StepsRoot>
+        </Box>
+
+        <Box className="mt-4 p-4 bg-white shadow rounded">
+          {downloadUrl && (
+            <ClipboardRoot
+              mb="20px"
+              maxW="300px"
+              value={downloadUrl}
+              timeout={1000}
+            >
+              <ClipboardLabel>Download Link</ClipboardLabel>
+              <InputGroup
+                width="full"
+                endElement={<ClipboardIconButton me="-2" />}
+              >
+                <ClipboardInput />
+              </InputGroup>
+            </ClipboardRoot>
+          )}
+        </Box>
       </VStack>
     </>
   );
