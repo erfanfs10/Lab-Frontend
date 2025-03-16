@@ -5,6 +5,8 @@ import {
   Button,
   Box,
   HStack,
+  ProgressCircle,
+  AbsoluteCenter,
 } from "@chakra-ui/react";
 import {
   FileUploadDropzone,
@@ -15,7 +17,6 @@ import {
 import { toaster } from "./ui/toaster";
 import { CloseButton } from "./ui/close-button";
 import { InputGroup } from "./ui/input-group";
-import { StepsItem, StepsList, StepsRoot } from "./ui/steps";
 import {
   ClipboardIconButton,
   ClipboardInput,
@@ -28,7 +29,8 @@ import axios from "axios";
 export default function Convert({ setWsStatus, wsStatus }) {
   const selectedFile = useRef(null);
   const [outPutFormat, setOutPutFormat] = useState(".png");
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(null);
+  const [status, setStatus] = useState(null);
   const [step, setStep] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState("");
 
@@ -52,9 +54,11 @@ export default function Convert({ setWsStatus, wsStatus }) {
     // runs when receive a message
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      // setStatus(data.status);
       setStep(data.step);
-      console.log(data.step);
-      if (data.status === "Done" && data.url) {
+      setProgress(data.progress);
+      setStatus(data.status);
+      if (data.status === "Done") {
         setDownloadUrl(data.url);
       }
     };
@@ -107,31 +111,26 @@ export default function Convert({ setWsStatus, wsStatus }) {
     const formData = new FormData();
     formData.append("image", f);
     axios
-      .post(
-        `http://127.0.0.1:8000/convert/?format=${outPutFormat}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (event) => {
-            let percent = Math.round((event.loaded * 100) / event.total);
-            setProgress(percent);
-          },
-        }
-      )
+      .post(`http://127.0.0.1:8000/convert/?format=${outPutFormat}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        // onUploadProgress: (event) => {
+        //   let percent = Math.round((event.loaded * 100) / event.total);
+        //   setProgress(percent);
+        // },
+      })
       .then((res) => {
-        console.log("success")
+        console.log("success");
       })
       .catch((err) => {
-        showToast(err.response.data.message, "error")
+        showToast(err.response.data.message, "error");
       });
   };
 
   return (
     <>
       <VStack justifyContent="center" alignItems="center">
-
         <Text textStyle="xl" fontWeight="semibold">
           Fast Image Converter Tool
         </Text>
@@ -143,7 +142,7 @@ export default function Convert({ setWsStatus, wsStatus }) {
           maxFiles={1}
         >
           <FileUploadDropzone
-            label="Drag and drop here to upload"
+            label="Drag and drop or click here to upload"
             description="png, jpeg, webp up to 5MB"
           />
           <InputGroup
@@ -165,54 +164,90 @@ export default function Convert({ setWsStatus, wsStatus }) {
           </InputGroup>
         </FileUploadRoot>
 
-        <Text mb="5px" textStyle="lg">
-          Select your output format
+        <Text mb="5px" textStyle="lg" fontWeight="medium">
+          Select Your Output Format
         </Text>
 
-        <RadioGroup mt="5px" size="lg" value={outPutFormat} onValueChange={(e) => setOutPutFormat(e.value)}>
+        <RadioGroup
+          mt="5px"
+          size="lg"
+          value={outPutFormat}
+          onValueChange={(e) => setOutPutFormat(e.value)}
+        >
           <HStack gap="6">
-            <Radio value=".png">.png</Radio>
-            <Radio value=".jpeg">.jpeg</Radio>
-            <Radio value=".webp">.webp</Radio>
+            <Radio value=".png">
+              <Text fontWeight="medium" textStyle="lg">
+                .png
+              </Text>
+            </Radio>
+            <Radio value=".jpeg">
+              <Text fontWeight="medium" textStyle="lg">
+                .jpeg
+              </Text>
+            </Radio>
+            <Radio value=".webp">
+              <Text fontWeight="medium" textStyle="lg">
+                .webp
+              </Text>
+            </Radio>
           </HStack>
         </RadioGroup>
 
-        <Button mt="10px" onClick={uploadFile}>
-          Upload & Convert
+        <Button mt="15px" onClick={uploadFile}>
+          <Text textStyle="md" fontWeight="semibold">
+            Upload & Convert
+          </Text>
         </Button>
 
-        <Box mt="10px" width="700px">
-          <StepsRoot defaultStep={0} step={step} count={3}>
-            <StepsList>
-              <StepsItem
-                index={0}
-                title="Uploading"
-                description={progress === 0 ? "" : progress + "%"}
-              />
-              <StepsItem index={1} title="Converting" />
-              <StepsItem index={2} title="Ready" />
-            </StepsList>
-          </StepsRoot>
-        </Box>
+        {/* <Box mb="10px" mt="15px" width="700px">
+        <StepsRoot defaultStep={0} step={step} count={3}>
+          <StepsList>
+            <StepsItem
+              index={0}
+              title="Uploading"
+              description={progress === 0 ? "" : progress + "%"}
+            />
+            <StepsItem index={1} title="Converting" />
+            <StepsItem index={2} title="Ready" />
+          </StepsList>
+        </StepsRoot>
+      </Box> */}
 
-        <Box className="mt-4 p-4 bg-white shadow rounded">
-          {downloadUrl && (
-            <ClipboardRoot
-              mb="20px"
-              maxW="300px"
-              value={downloadUrl}
-              timeout={1000}
-            >
-              <ClipboardLabel>Download Link</ClipboardLabel>
-              <InputGroup
-                width="full"
-                endElement={<ClipboardIconButton me="-2" />}
-              >
-                <ClipboardInput />
-              </InputGroup>
-            </ClipboardRoot>
+        <Box>
+          {progress && (
+            <>
+              <Text mt="15px">{status}</Text>
+              <VStack mt="3px">
+                <ProgressCircle.Root size="lg" value={progress}>
+                  <ProgressCircle.Circle css={{ "--thickness": "4px" }}>
+                    <ProgressCircle.Track />
+                    <ProgressCircle.Range />
+                  </ProgressCircle.Circle>
+                  <AbsoluteCenter>
+                    <ProgressCircle.ValueText />
+                  </AbsoluteCenter>
+                </ProgressCircle.Root>
+              </VStack>
+            </>
           )}
         </Box>
+
+        {downloadUrl && (
+          <ClipboardRoot
+            mb="20px"
+            maxW="300px"
+            value={downloadUrl}
+            timeout={1000}
+          >
+            <ClipboardLabel textStyle="md">Download Link</ClipboardLabel>
+            <InputGroup
+              width="full"
+              endElement={<ClipboardIconButton me="-2" />}
+            >
+              <ClipboardInput />
+            </InputGroup>
+          </ClipboardRoot>
+        )}
       </VStack>
     </>
   );
