@@ -5,15 +5,18 @@ import Convert from "./components/Convert";
 
 export default function App() {
   const [wsStatus, setWsStatus] = useState(false);
+  const [lang, setLang] = useState(() =>
+    localStorage.getItem("lang") ? localStorage.getItem("lang") : null
+  );
 
   return (
     <Grid p="10px" gap="4px" templateRows="repeat(10, 1fr)" minHeight="100vh">
       <GridItem rowSpan={1}>
-        <Navbar wsStatus={wsStatus} />
+        <Navbar wsStatus={wsStatus} setLang={setLang} lang={lang} />
       </GridItem>
 
       <GridItem rowSpan={9}>
-        <Convert wsStatus={wsStatus} setWsStatus={setWsStatus} />
+        <Convert wsStatus={wsStatus} setWsStatus={setWsStatus} lang={lang} />
       </GridItem>
     </Grid>
   );
