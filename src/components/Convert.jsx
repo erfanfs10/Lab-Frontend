@@ -26,13 +26,19 @@ import {
 import { Radio, RadioGroup } from "./ui/radio";
 import axios from "axios";
 
-export default function Convert({ setWsStatus, wsStatus }) {
+export default function Convert({ setWsStatus, wsStatus, lang }) {
   const selectedFile = useRef(null);
   const [outPutFormat, setOutPutFormat] = useState(".png");
   const [progress, setProgress] = useState(null);
   const [status, setStatus] = useState(null);
-  const [step, setStep] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState("");
+
+  // Create Status Translate Map
+  const statusTranslate = new Map([
+    ["Uploading", "در حال آپلود"],
+    ["Converting", "در حال کانورت"],
+    ["Done", "انجام شد"],
+  ]);
 
   const showToast = (errorText, toastType) => {
     toaster.create({
@@ -54,8 +60,6 @@ export default function Convert({ setWsStatus, wsStatus }) {
     // runs when receive a message
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      // setStatus(data.status);
-      setStep(data.step);
       setProgress(data.progress);
       setStatus(data.status);
       if (data.status === "Done") {
@@ -65,7 +69,10 @@ export default function Convert({ setWsStatus, wsStatus }) {
 
     // runs when there is an error
     ws.onerror = (error) => {
-      showToast("Can Not Connect To Server", "error");
+      showToast(
+        lang === "fa" ? "خطا در اتصال به سرور" : "Can Not Connect To Server",
+        "error"
+      );
       console.log("Can not connect to Websocket:", error);
       setWsStatus(false);
     };
@@ -93,19 +100,42 @@ export default function Convert({ setWsStatus, wsStatus }) {
     e.preventDefault();
     const f = selectedFile.current.files[0];
     if (!f) {
-      showToast("Please Select A File", "error");
+      showToast(
+        lang === "fa" ? "لطفا فایل خود را انتخاب کنید" : "Please Select A File",
+        "error"
+      );
       return;
     }
     if (!Boolean(f.type.match("image.*"))) {
-      showToast("The File Is Not An Image", "error");
+      showToast(
+        lang === "fa" ? "فایل انتخاب شده عکس نیست" : "The File Is Not An Image",
+        "error"
+      );
       return;
     }
     if (f.size >= 5000000) {
-      showToast("The File Is Too Large", "error");
+      showToast(
+        lang === "fa" ? "حجم فایل بیش از حد مجاز است" : "The File Is Too Large",
+        "error"
+      );
       return;
     }
     if (outPutFormat == "") {
-      showToast("Please Select Your Output Format", "error");
+      showToast(
+        lang === "fa"
+          ? "لطفا خروجی فایل خود را انتخاب کنید"
+          : "Please Select Your Output Format",
+        "error"
+      );
+      return;
+    }
+    if ("." + f.name.split(".")[1] === outPutFormat) {
+      showToast(
+        lang === "fa"
+          ? "فرمت خروجی و فایل انتخاب شده یکسان است"
+          : "Output Format And Selected File Format Are The Same",
+        "error"
+      );
       return;
     }
     const formData = new FormData();
@@ -131,10 +161,6 @@ export default function Convert({ setWsStatus, wsStatus }) {
   return (
     <>
       <VStack justifyContent="center" alignItems="center">
-        <Text textStyle="xl" fontWeight="semibold">
-          Fast Image Converter Tool
-        </Text>
-
         <FileUploadRoot
           ref={selectedFile}
           maxW="xl"
@@ -142,8 +168,16 @@ export default function Convert({ setWsStatus, wsStatus }) {
           maxFiles={1}
         >
           <FileUploadDropzone
-            label="Drag and drop or click here to upload"
-            description="png, jpeg, webp up to 5MB"
+            label={
+              lang === "eng"
+                ? "Drag and drop or click here to upload"
+                : "بکشید یا کلیک کنید"
+            }
+            description={
+              lang === "eng"
+                ? "png, jpeg, webp up to 5MB"
+                : "png, jpeg, webp حداکثر ۵ مگابایت"
+            }
           />
           <InputGroup
             endElement={
@@ -164,17 +198,34 @@ export default function Convert({ setWsStatus, wsStatus }) {
           </InputGroup>
         </FileUploadRoot>
 
-        <Text mb="5px" textStyle="lg" fontWeight="medium">
-          Select Your Output Format
+        <Text
+          mb="5px"
+          textStyle={{
+            base: "md",
+            sm: "md",
+            md: "md",
+            lg: "lg",
+            xl: "lg",
+          }}
+          fontWeight="medium"
+        >
+          {lang === "eng"
+            ? "Select Your Output Format"
+            : "فرمت خروجی را انتخاب کنید"}
         </Text>
-
         <RadioGroup
           mt="5px"
-          size="lg"
+          size={{
+            base: "sm",
+            sm: "sm",
+            md: "md",
+            lg: "lg",
+            xl: "lg",
+          }}
           value={outPutFormat}
           onValueChange={(e) => setOutPutFormat(e.value)}
         >
-          <HStack gap="6">
+          <HStack gap="4">
             <Radio value=".png">
               <Text fontWeight="medium" textStyle="lg">
                 .png
@@ -193,60 +244,106 @@ export default function Convert({ setWsStatus, wsStatus }) {
           </HStack>
         </RadioGroup>
 
-        <Button mt="15px" onClick={uploadFile}>
-          <Text textStyle="md" fontWeight="semibold">
-            Upload & Convert
+        <Button
+          size={{
+            base: "sm",
+            sm: "sm",
+            md: "md",
+            lg: "md",
+            xl: "md",
+          }}
+          mt="15px"
+          onClick={uploadFile}
+        >
+          <Text
+            textStyle={{
+              base: "sm",
+              sm: "sm",
+              md: "md",
+              lg: "md",
+              xl: "md",
+            }}
+            fontWeight="semibold"
+          >
+            {lang === "eng" ? "Upload & Convert" : "آپلود و کانورت"}
           </Text>
         </Button>
 
-        {/* <Box mb="10px" mt="15px" width="700px">
-        <StepsRoot defaultStep={0} step={step} count={3}>
-          <StepsList>
-            <StepsItem
-              index={0}
-              title="Uploading"
-              description={progress === 0 ? "" : progress + "%"}
-            />
-            <StepsItem index={1} title="Converting" />
-            <StepsItem index={2} title="Ready" />
-          </StepsList>
-        </StepsRoot>
-      </Box> */}
-
         <Box>
           {progress && (
-            <>
-              <Text mt="15px">{status}</Text>
-              <VStack mt="3px">
-                <ProgressCircle.Root size="lg" value={progress}>
-                  <ProgressCircle.Circle css={{ "--thickness": "4px" }}>
-                    <ProgressCircle.Track />
-                    <ProgressCircle.Range />
-                  </ProgressCircle.Circle>
-                  <AbsoluteCenter>
-                    <ProgressCircle.ValueText />
-                  </AbsoluteCenter>
-                </ProgressCircle.Root>
-              </VStack>
-            </>
+            <HStack justifyContent="center" alignItems="center" mt="15px">
+              <ProgressCircle.Root
+                textStyle={{
+                  base: "md",
+                  sm: "md",
+                  md: "md",
+                  lg: "lg",
+                  xl: "lg",
+                }}
+                value={progress}
+              >
+                <ProgressCircle.Circle
+                  css={{
+                    "--thickness": {
+                      base: "2px",
+                      sm: "2px",
+                      md: "3px",
+                      lg: "3px",
+                      xl: "3px",
+                    },
+                  }}
+                >
+                  <ProgressCircle.Track />
+                  <ProgressCircle.Range />
+                </ProgressCircle.Circle>
+                <AbsoluteCenter>
+                  <ProgressCircle.ValueText />
+                </AbsoluteCenter>
+              </ProgressCircle.Root>
+              <Text
+                textStyle={{
+                  base: "sm",
+                  sm: "sm",
+                  md: "md",
+                  lg: "lg",
+                  xl: "lg",
+                }}
+              >
+                {lang === "eng" ? status : statusTranslate.get(status)}
+              </Text>
+            </HStack>
           )}
         </Box>
 
         {downloadUrl && (
-          <ClipboardRoot
-            mb="20px"
-            maxW="300px"
-            value={downloadUrl}
-            timeout={1000}
-          >
-            <ClipboardLabel textStyle="md">Download Link</ClipboardLabel>
-            <InputGroup
-              width="full"
-              endElement={<ClipboardIconButton me="-2" />}
+          <>
+            <ClipboardRoot
+              mb="20px"
+              maxW="300px"
+              value={downloadUrl}
+              timeout={1000}
+              dir={lang === "fa" ? "rtl" : "ltl"}
             >
-              <ClipboardInput />
-            </InputGroup>
-          </ClipboardRoot>
+              <ClipboardLabel
+                ttextStyle={{
+                  base: "md",
+                  sm: "md",
+                  md: "md",
+                  lg: "lg",
+                  xl: "lg",
+                }}
+              >
+                {lang === "eng" ? "Download Link" : "لینک دانلود"}
+              </ClipboardLabel>
+              <InputGroup
+                width="full"
+                endElement={<ClipboardIconButton me="-2" />}
+              >
+                <ClipboardInput />
+              </InputGroup>
+            </ClipboardRoot>
+            {/* <a href={downloadUrl}>download</a> */}
+          </>
         )}
       </VStack>
     </>
