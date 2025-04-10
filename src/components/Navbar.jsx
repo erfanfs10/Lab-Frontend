@@ -1,43 +1,33 @@
-import { useState } from "react";
-import {
-  Flex,
-  HStack,
-  Heading,
-  Spacer,
-  LocaleProvider,
-  Separator,
-  Status,
-} from "@chakra-ui/react";
+import { Flex, HStack, Separator } from "@chakra-ui/react";
+import CustomMenu from "./CustomMenu";
+import Header from "./Header";
+import CustomStatus from "./CustomStatus";
 import ColorModeButton from "./ColorMode";
 import SelectLanguage from "./SelectLanguage";
 
-export default function Navbar({ wsStatus }) {
-  const [lang, setLang] = useState("eng");
-
+export default function Navbar({ wsStatus, setLang, lang }) {
   return (
     <>
-      <LocaleProvider locale="ar-Ar">
-        <Flex as="nav" m="10px" dir={lang === "fa" ? "rtl" : ""}>
-          <Heading ml="20px">
-            {lang === "fa" ? "برنامه کانورت عکس" : "The Image Converter App"}
-          </Heading>
-          <Spacer />
-          <HStack mr="20px" spaceX="20px">
-            <Status.Root size="lg" colorPalette={wsStatus ? "green" : "red"}>
-              <Status.Indicator />
-              {wsStatus
-                ? lang === "fa"
-                  ? "متصل شد"
-                  : "Connected"
-                : lang === "fa"
-                ? "در حال اتصال"
-                : "Connecting"}
-            </Status.Root>
-            <SelectLanguage onSetLang={(val) => setLang(val)} />
-            <ColorModeButton />
-          </HStack>
-        </Flex>
-      </LocaleProvider>
+      <Flex
+        as="nav"
+        m="10px"
+        dir={lang === "fa" ? "rtl" : "ltl"}
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <Header lang={lang} />
+        <HStack spaceX="20px">
+          <CustomStatus wsStatus={wsStatus} lang={lang} hideBelow="md" />
+          <SelectLanguage setLang={setLang} lang={lang} hideBelow="md" />
+          <ColorModeButton hideBelow="md" />
+          <CustomMenu
+            setLang={setLang}
+            lang={lang}
+            wsStatus={wsStatus}
+            hideBelow="md"
+          />
+        </HStack>
+      </Flex>
       <Separator size="md" />
     </>
   );
