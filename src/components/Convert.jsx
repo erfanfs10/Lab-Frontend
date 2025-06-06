@@ -2,28 +2,21 @@ import { useState, useRef, useEffect } from "react";
 import {
   VStack,
   Text,
-  Button,
   Box,
   HStack,
   ProgressCircle,
   AbsoluteCenter,
+  Clipboard,
+  InputGroup,
+  Input,
+  IconButton,
+  FileUpload,
+  Icon,
+  RadioGroup,
 } from "@chakra-ui/react";
-import {
-  FileUploadDropzone,
-  FileUploadList,
-  FileUploadRoot,
-  FileUploadClearTrigger,
-} from "./ui/file-upload";
+import UploadButton from "./UploadButton";
 import { toaster } from "./ui/toaster";
-import { CloseButton } from "./ui/close-button";
-import { InputGroup } from "./ui/input-group";
-import {
-  ClipboardIconButton,
-  ClipboardInput,
-  ClipboardLabel,
-  ClipboardRoot,
-} from "./ui/clipboard";
-import { Radio, RadioGroup } from "./ui/radio";
+import { LuUpload } from "react-icons/lu";
 import axios from "axios";
 
 export default function Convert({ setWsStatus, wsStatus, lang }) {
@@ -160,43 +153,44 @@ export default function Convert({ setWsStatus, wsStatus, lang }) {
 
   return (
     <>
-      <VStack justifyContent="center" alignItems="center">
-        <FileUploadRoot
-          ref={selectedFile}
-          maxW="xl"
-          alignItems="stretch"
-          maxFiles={1}
-        >
-          <FileUploadDropzone
-            label={
-              lang === "eng"
-                ? "Drag and drop or click here to upload"
-                : "بکشید یا کلیک کنید"
-            }
-            description={
-              lang === "eng"
-                ? "png, jpeg, webp up to 5MB"
-                : "png, jpeg, webp حداکثر ۵ مگابایت"
-            }
-          />
-          <InputGroup
-            endElement={
-              <FileUploadClearTrigger asChild>
-                <CloseButton
-                  me="-1"
-                  size="xs"
-                  variant="plain"
-                  focusVisibleRing="inside"
-                  focusRingWidth="2px"
-                  pointerEvents="auto"
-                  color="fg.subtle"
-                />
-              </FileUploadClearTrigger>
-            }
-          >
-            <FileUploadList required />
-          </InputGroup>
-        </FileUploadRoot>
+      <VStack
+        justifyContent="center"
+        alignItems="center"
+      >
+        <FileUpload.Root mt="2px" maxW="xl" alignItems="stretch" maxFiles={1}>
+          <FileUpload.HiddenInput ref={selectedFile} />
+          <FileUpload.Dropzone>
+            <Icon size="md">
+              <LuUpload />
+            </Icon>
+            <FileUpload.DropzoneContent>
+              <Box>
+                {lang === "eng"
+                  ? "Drag and drop or click here to upload"
+                  : "بکشید یا کلیک کنید"}
+              </Box>
+              <Box>
+                {lang === "eng"
+                  ? "png, jpeg, webp up to 5MB"
+                  : "png, jpeg, webp حداکثر ۵ مگابایت"}
+              </Box>
+            </FileUpload.DropzoneContent>
+          </FileUpload.Dropzone>
+          <FileUpload.ItemGroup>
+            <FileUpload.Context>
+              {({ acceptedFiles }) =>
+                acceptedFiles.map((file) => (
+                  <FileUpload.Item key={file.name} file={file}>
+                    <FileUpload.ItemPreview />
+                    <FileUpload.ItemName />
+                    <FileUpload.ItemSizeText />
+                    <FileUpload.ItemDeleteTrigger />
+                  </FileUpload.Item>
+                ))
+              }
+            </FileUpload.Context>
+          </FileUpload.ItemGroup>
+        </FileUpload.Root>
 
         <Text
           mb="5px"
@@ -213,7 +207,8 @@ export default function Convert({ setWsStatus, wsStatus, lang }) {
             ? "Select Your Output Format"
             : "فرمت خروجی را انتخاب کنید"}
         </Text>
-        <RadioGroup
+
+        <RadioGroup.Root
           mt="5px"
           size={{
             base: "sm",
@@ -226,48 +221,25 @@ export default function Convert({ setWsStatus, wsStatus, lang }) {
           onValueChange={(e) => setOutPutFormat(e.value)}
         >
           <HStack gap="4">
-            <Radio value=".png">
-              <Text fontWeight="medium" textStyle="lg">
-                .png
-              </Text>
-            </Radio>
-            <Radio value=".jpeg">
-              <Text fontWeight="medium" textStyle="lg">
-                .jpeg
-              </Text>
-            </Radio>
-            <Radio value=".webp">
-              <Text fontWeight="medium" textStyle="lg">
-                .webp
-              </Text>
-            </Radio>
+            <RadioGroup.Item value=".png">
+              <RadioGroup.ItemHiddenInput />
+              <RadioGroup.ItemIndicator />
+              <RadioGroup.ItemText>.png</RadioGroup.ItemText>
+            </RadioGroup.Item>
+            <RadioGroup.Item value=".jpeg">
+              <RadioGroup.ItemHiddenInput />
+              <RadioGroup.ItemIndicator />
+              <RadioGroup.ItemText>.jpeg</RadioGroup.ItemText>
+            </RadioGroup.Item>
+            <RadioGroup.Item value=".webp">
+              <RadioGroup.ItemHiddenInput />
+              <RadioGroup.ItemIndicator />
+              <RadioGroup.ItemText>.webp</RadioGroup.ItemText>
+            </RadioGroup.Item>
           </HStack>
-        </RadioGroup>
+        </RadioGroup.Root>
 
-        <Button
-          size={{
-            base: "sm",
-            sm: "sm",
-            md: "md",
-            lg: "md",
-            xl: "md",
-          }}
-          mt="15px"
-          onClick={uploadFile}
-        >
-          <Text
-            textStyle={{
-              base: "sm",
-              sm: "sm",
-              md: "md",
-              lg: "md",
-              xl: "md",
-            }}
-            fontWeight="semibold"
-          >
-            {lang === "eng" ? "Upload & Convert" : "آپلود و کانورت"}
-          </Text>
-        </Button>
+        <UploadButton lang={lang} onUploadFile={uploadFile} />
 
         <Box>
           {progress && (
@@ -317,32 +289,40 @@ export default function Convert({ setWsStatus, wsStatus, lang }) {
 
         {downloadUrl && (
           <>
-            <ClipboardRoot
-              mb="20px"
+            <Clipboard.Root
+              mt="5px"
               maxW="300px"
               value={downloadUrl}
               timeout={1000}
               dir={lang === "fa" ? "rtl" : "ltl"}
             >
-              <ClipboardLabel
-                ttextStyle={{
-                  base: "md",
-                  sm: "md",
+              <Clipboard.Label
+                textStyle={{
+                  base: "sm",
+                  sm: "sm",
                   md: "md",
-                  lg: "lg",
-                  xl: "lg",
+                  lg: "md",
+                  xl: "md",
                 }}
               >
                 {lang === "eng" ? "Download Link" : "لینک دانلود"}
-              </ClipboardLabel>
+              </Clipboard.Label>
               <InputGroup
-                width="full"
-                endElement={<ClipboardIconButton me="-2" />}
+                endElement={
+                  <>
+                    <Clipboard.Trigger asChild>
+                      <IconButton variant="surface" size="xs" me="-2">
+                        <Clipboard.Indicator />
+                      </IconButton>
+                    </Clipboard.Trigger>
+                  </>
+                }
               >
-                <ClipboardInput />
+                <Clipboard.Input asChild>
+                  <Input />
+                </Clipboard.Input>
               </InputGroup>
-            </ClipboardRoot>
-            {/* <a href={downloadUrl}>download</a> */}
+            </Clipboard.Root>
           </>
         )}
       </VStack>

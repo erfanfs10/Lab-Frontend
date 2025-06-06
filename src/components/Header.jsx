@@ -1,20 +1,19 @@
-import { Heading } from "@chakra-ui/react";
+import { Text } from "@chakra-ui/react";
 
 export default function Header({ lang }) {
   return (
     <>
-      <Heading
+      <Text
         textStyle={{
-          base: "sm",
-          sm: "sm",
-          md: "md",
-          lg: "lg",
-          xl: "lg",
+          base: "md",
+          sm: "md",
+          md: "lg",
+          lg: "xl",
+          xl: "xl",
         }}
-        as="h1"
       >
         {lang === "fa" ? "ابزار کانورت سریع عکس" : "Fast Image Converter Tool"}
-      </Heading>
+      </Text>
     </>
   );
 }
